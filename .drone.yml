@@ -3,7 +3,7 @@ name: tests
 
 environment:
   MIX_ENV: test
-  ELIXIR_ASSERT_TIMEOUT: 350
+  ELIXIR_ASSERT_TIMEOUT: 500
 
 steps:
 - name: install
