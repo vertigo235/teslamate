@@ -1,0 +1,107 @@
+kind: pipeline
+name: default
+
+trigger:
+  event:
+    exclude:
+      - pull_request
+
+steps:
+- name: shellcheck
+  image: koalaman/shellcheck-alpine
+  pull: always
+  commands:
+    - shellcheck --version
+    - for file in $(find ./root -type f); do echo $file; shellcheck $file; done;
+
+- name: teslamate-dev-build
+  image: plugins/docker
+  pull: always
+  settings:
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: vertigo235/teslamate
+    tags: 
+        - '${DRONE_BRANCH}'
+        - '${DRONE_BRANCH}-${DRONE_COMMIT:0:6}'
+    cache_from: vertigo235/teslamate
+  when:
+    branch:
+      exclude:
+        - master
+    event:
+      - push
+  depends_on:
+    - clone
+
+- name: grafana-dev-build
+  image: plugins/docker
+  pull: always
+  settings:
+    dockerfile: grafana/Dockerfile
+    context: grafana/
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: vertigo235/teslamate-grafana
+    tags: 
+        - '${DRONE_BRANCH}'
+        - '${DRONE_BRANCH}-${DRONE_COMMIT:0:6}'
+    cache_from: vertigo235/teslamate-grafana
+  when:
+    branch:
+      exclude:
+        - master
+    event:
+      - push
+  depends_on:
+    - clone
+
+- name: teslamate-build
+  image: plugins/docker
+  pull: always
+  settings:
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: vertigo235/teslamate
+    tags:
+      - latest
+      - '1'
+      - '1.20'
+      - '1.20.${DRONE_BUILD_NUMBER}'
+    #auto_tag: true
+    cache_from: vertigo235/teslamate
+  when:
+    branch:
+      - master
+  depends_on:
+    - clone
+    
+- name: teslamate-grafana-build
+  image: plugins/docker
+  pull: always
+  settings:
+    dockerfile: grafana/Dockerfile
+    context: grafana/
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: vertigo235/teslamate-grafana
+    tags:
+      - latest
+      - '1'
+      - '1.20'
+      - '1.20.${DRONE_BUILD_NUMBER}'
+    #auto_tag: true
+    cache_from: vertigo235/teslamate-grafana
+  when:
+    branch:
+      - master
+  depends_on:
+    - clone
