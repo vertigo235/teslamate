@@ -12,7 +12,7 @@ config :teslamate, TeslaMate.Repo,
   username: "postgres",
   password: "postgres",
   database: "teslamate_test",
-  hostname: "localhost",
+  hostname: "database",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :teslamate, :srtm_cache, "./.srtm_cache"

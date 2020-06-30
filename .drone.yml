@@ -1,6 +1,10 @@
 kind: pipeline
 name: tests
 
+environment:
+  MIX_ENV: test
+  ELIXIR_ASSERT_TIMEOUT: 350
+
 steps:
 - name: install
   image: elixir:1.10
@@ -20,6 +24,14 @@ steps:
   commands:
   - mix format --check-formatted
   - mix test    
+
+services:
+  - name: database
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: teslamate_test
 
 volumes:
 - name: mix
