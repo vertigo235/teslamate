@@ -6,25 +6,64 @@ environment:
   ELIXIR_ASSERT_TIMEOUT: 500
 
 steps:
-- name: install
-  image: elixir:1.10
-  volumes:
-  - name: mix
-    path: /root/.mix
-  commands:
-  - mix local.rebar --force
-  - mix local.hex --force
-  - mix do deps.get, compile    
+  - name: restore-cache
+    image: meltwater/drone-cache
+    environment:
+      AWS_ACCESS_KEY_ID:
+        from_secret: aws_access_key_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_secret_access_key
+    pull: true
+    settings:
+      endpoint: https://minio.blubeacon.com
+      restore: true
+      path_style: true
+      #cache_key: {{ .Commit.Branch }}-{{ checksum "go.mod" }} # default if ommitted is {{ .Commit.Branch }}
+      bucket: drone-cache-bucket
+      region: us-east-1
+      mount:
+        - 'deps'
+        - '_build'
 
-- name: test
-  image: elixir:1.10
-  volumes:
-  - name: mix
-    path: /root/.mix
-  commands:
-  - mix format --check-formatted
-  - mix test    
+  - name: install
+    image: elixir:1.10
+    volumes:
+    - name: mix
+      path: /root/.mix
+    commands:
+    - mix local.rebar --force
+    - mix local.hex --force
+    - mix do deps.get, compile    
 
+  - name: test
+    image: elixir:1.10
+    volumes:
+    - name: mix
+      path: /root/.mix
+    commands:
+    - mix format --check-formatted
+    - mix test    
+  
+  - name: rebuild-cache
+    image: meltwater/drone-cache
+    pull: true
+    environment:
+      AWS_ACCESS_KEY_ID:
+        from_secret: aws_access_key_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_secret_access_key
+    settings:
+      endpoint: https://minio.blubeacon.com
+      path_style: true
+      rebuild: true
+      #cache_key: {{ .Commit.Branch }}-{{ checksum "go.mod" }} # default if ommitted is {{ .Commit.Branch }}
+      bucket: drone-cache-bucket
+      region: us-east-1
+      mount:
+        - 'deps'
+        - '_build'
+
+  
 services:
   - name: database
     image: postgres
