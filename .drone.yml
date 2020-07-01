@@ -40,6 +40,7 @@ steps:
     volumes:
     - name: mix
       path: /root/.mix
+    failure: ignore
     commands:
     - mix format --check-formatted
     - mix test    
